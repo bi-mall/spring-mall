@@ -87,7 +87,13 @@ public class OrderControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(json);
 
-    mockMvc.perform(requestBuilder).andExpect(status().isBadRequest());
+    mockMvc
+        .perform(requestBuilder)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status", equalTo(400)))
+        .andExpect(jsonPath("$.code", equalTo("VALIDATION_ERROR")))
+        .andExpect(jsonPath("$.message", equalTo("Request validation failed")))
+        .andExpect(jsonPath("$.errors[0].field", equalTo("buyItemList")));
   }
 
   @Transactional
@@ -111,7 +117,13 @@ public class OrderControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(json);
 
-    mockMvc.perform(requestBuilder).andExpect(status().isBadRequest());
+    mockMvc
+        .perform(requestBuilder)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status", equalTo(400)))
+        .andExpect(jsonPath("$.code", equalTo("VALIDATION_ERROR")))
+        .andExpect(jsonPath("$.message", equalTo("Request validation failed")))
+        .andExpect(jsonPath("$.errors[0].field", equalTo("buyItemList[0].quantity")));
   }
 
   @Transactional
@@ -135,7 +147,12 @@ public class OrderControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(json);
 
-    mockMvc.perform(requestBuilder).andExpect(status().isForbidden());
+    mockMvc
+        .perform(requestBuilder)
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.status", equalTo(403)))
+        .andExpect(jsonPath("$.code", equalTo("FORBIDDEN")))
+        .andExpect(jsonPath("$.message", equalTo("Cannot access another user's orders")));
   }
 
   @Transactional
@@ -159,7 +176,12 @@ public class OrderControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(json);
 
-    mockMvc.perform(requestBuilder).andExpect(status().isBadRequest());
+    mockMvc
+        .perform(requestBuilder)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status", equalTo(400)))
+        .andExpect(jsonPath("$.code", equalTo("BAD_REQUEST")))
+        .andExpect(jsonPath("$.message", equalTo("Product does not exist")));
   }
 
   @Transactional
@@ -183,7 +205,12 @@ public class OrderControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(json);
 
-    mockMvc.perform(requestBuilder).andExpect(status().isBadRequest());
+    mockMvc
+        .perform(requestBuilder)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status", equalTo(400)))
+        .andExpect(jsonPath("$.code", equalTo("BAD_REQUEST")))
+        .andExpect(jsonPath("$.message", equalTo("Product stock is not enough")));
   }
 
   @Test
@@ -258,6 +285,11 @@ public class OrderControllerTest {
         MockMvcRequestBuilders.get("/users/{userId}/orders", 2)
             .header(HttpHeaders.AUTHORIZATION, AUTHORIZATION_USER_1);
 
-    mockMvc.perform(requestBuilder).andExpect(status().isForbidden());
+    mockMvc
+        .perform(requestBuilder)
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.status", equalTo(403)))
+        .andExpect(jsonPath("$.code", equalTo("FORBIDDEN")))
+        .andExpect(jsonPath("$.message", equalTo("Cannot access another user's orders")));
   }
 }

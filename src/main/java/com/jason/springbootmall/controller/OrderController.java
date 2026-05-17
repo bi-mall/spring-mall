@@ -70,17 +70,18 @@ public class OrderController {
 
   private void validateOwner(Integer userId, Authentication authentication) {
     if (authentication == null || !authentication.isAuthenticated()) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
     }
 
     User currentUser = userService.getUserByEmail(authentication.getName());
 
     if (currentUser == null) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
     }
 
     if (!currentUser.getUserId().equals(userId)) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Cannot access another user's orders");
     }
   }
 }

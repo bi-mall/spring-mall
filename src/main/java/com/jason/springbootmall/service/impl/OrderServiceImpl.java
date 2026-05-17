@@ -54,7 +54,7 @@ public class OrderServiceImpl implements OrderService {
 
     if (user == null) {
       log.warn("User does not exist, userId={}", userId);
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User does not exist");
     }
 
     int totalAmount = 0;
@@ -65,14 +65,14 @@ public class OrderServiceImpl implements OrderService {
 
       if (product == null) {
         log.warn("Product does not exist, productId={}", buyItem.getProductId());
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product does not exist");
       } else if (product.getStock() < buyItem.getQuantity()) {
         log.warn(
             "Product stock is not enough, productId={}, stock={}, requestedQuantity={}",
             buyItem.getProductId(),
             product.getStock(),
             buyItem.getQuantity());
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product stock is not enough");
       }
 
       boolean stockUpdated =
@@ -83,7 +83,7 @@ public class OrderServiceImpl implements OrderService {
             "Product stock changed before update, productId={}, requestedQuantity={}",
             buyItem.getProductId(),
             buyItem.getQuantity());
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product stock is not enough");
       }
 
       int amount = buyItem.getQuantity() * product.getPrice();
@@ -109,7 +109,7 @@ public class OrderServiceImpl implements OrderService {
     Order order = orderDao.getOrderById(orderId);
 
     if (order == null) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Order does not exist");
     }
 
     List<OrderItem> orderItemList = orderDao.getOrderItemsByOrderId(orderId);
