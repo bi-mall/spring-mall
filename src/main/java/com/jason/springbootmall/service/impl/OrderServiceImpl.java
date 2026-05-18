@@ -50,51 +50,20 @@ public class OrderServiceImpl implements OrderService {
   @Transactional
   @Override
   public Integer createOrder(Integer userId, CreateOrderRequest createOrderRequest) {
-    User user = userDao.getUserById(userId);
-
-    if (user == null) {
-      log.warn("User does not exist, userId={}", userId);
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User does not exist");
-    }
+    validateUserExists(userId);
 
     int totalAmount = 0;
     List<OrderItem> orderItemList = new ArrayList<>();
 
     for (BuyItem buyItem : createOrderRequest.getBuyItemList()) {
-      Product product = productDao.getProductById(buyItem.getProductId());
+      Product product = getProductOrThrow(buyItem.getProductId());
+      validateStockEnough(product, buyItem);
+      decreaseStockOrThrow(product, buyItem);
 
-      if (product == null) {
-        log.warn("Product does not exist, productId={}", buyItem.getProductId());
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product does not exist");
-      } else if (product.getStock() < buyItem.getQuantity()) {
-        log.warn(
-            "Product stock is not enough, productId={}, stock={}, requestedQuantity={}",
-            buyItem.getProductId(),
-            product.getStock(),
-            buyItem.getQuantity());
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product stock is not enough");
-      }
-
-      boolean stockUpdated =
-          productDao.decreaseStock(product.getProductId(), buyItem.getQuantity());
-
-      if (!stockUpdated) {
-        log.warn(
-            "Product stock changed before update, productId={}, requestedQuantity={}",
-            buyItem.getProductId(),
-            buyItem.getQuantity());
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product stock is not enough");
-      }
-
-      int amount = buyItem.getQuantity() * product.getPrice();
+      int amount = calculateAmount(product, buyItem);
       totalAmount = totalAmount + amount;
 
-      OrderItem orderItem = new OrderItem();
-      orderItem.setProductId(buyItem.getProductId());
-      orderItem.setQuantity(buyItem.getQuantity());
-      orderItem.setAmount(amount);
-
-      orderItemList.add(orderItem);
+      orderItemList.add(buildOrderItem(buyItem, amount));
     }
 
     Integer orderId = orderDao.createOrder(userId, totalAmount);
@@ -117,5 +86,61 @@ public class OrderServiceImpl implements OrderService {
     order.setOrderItemList(orderItemList);
 
     return order;
+  }
+
+  private void validateUserExists(Integer userId) {
+    User user = userDao.getUserById(userId);
+
+    if (user == null) {
+      log.warn("User does not exist, userId={}", userId);
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User does not exist");
+    }
+  }
+
+  private Product getProductOrThrow(Integer productId) {
+    Product product = productDao.getProductById(productId);
+
+    if (product == null) {
+      log.warn("Product does not exist, productId={}", productId);
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product does not exist");
+    }
+
+    return product;
+  }
+
+  private void validateStockEnough(Product product, BuyItem buyItem) {
+    if (product.getStock() < buyItem.getQuantity()) {
+      log.warn(
+          "Product stock is not enough, productId={}, stock={}, requestedQuantity={}",
+          buyItem.getProductId(),
+          product.getStock(),
+          buyItem.getQuantity());
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product stock is not enough");
+    }
+  }
+
+  private void decreaseStockOrThrow(Product product, BuyItem buyItem) {
+    boolean stockUpdated = productDao.decreaseStock(product.getProductId(), buyItem.getQuantity());
+
+    if (!stockUpdated) {
+      log.warn(
+          "Product stock changed before update, productId={}, requestedQuantity={}",
+          buyItem.getProductId(),
+          buyItem.getQuantity());
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product stock is not enough");
+    }
+  }
+
+  private int calculateAmount(Product product, BuyItem buyItem) {
+    return buyItem.getQuantity() * product.getPrice();
+  }
+
+  private OrderItem buildOrderItem(BuyItem buyItem, int amount) {
+    OrderItem orderItem = new OrderItem();
+    orderItem.setProductId(buyItem.getProductId());
+    orderItem.setQuantity(buyItem.getQuantity());
+    orderItem.setAmount(amount);
+
+    return orderItem;
   }
 }
