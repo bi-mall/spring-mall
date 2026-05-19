@@ -1,5 +1,6 @@
 package com.jason.springbootmall.dao.impl;
 
+import com.jason.springbootmall.constant.ProductStatus;
 import com.jason.springbootmall.dao.ProductDao;
 import com.jason.springbootmall.dto.ProductQueryParams;
 import com.jason.springbootmall.dto.ProductRequest;
@@ -33,7 +34,7 @@ public class ProductDaoImpl implements ProductDao {
   public List<Product> getProducts(ProductQueryParams productQueryParams) {
 
     String sql =
-        "SELECT product_id, product_name, category, image_url, price, stock, description, created_date, last_modified_date "
+        "SELECT product_id, product_name, category, image_url, price, stock, description, status, created_date, last_modified_date "
             + "FROM product WHERE 1=1";
 
     Map<String, Object> map = new HashMap<>();
@@ -57,12 +58,13 @@ public class ProductDaoImpl implements ProductDao {
   @Override
   public Product getProductById(Integer productId) {
     String sql =
-        "SELECT product_id, product_name, category, image_url, price, stock, description, created_date, last_modified_date "
+        "SELECT product_id, product_name, category, image_url, price, stock, description, status, created_date, last_modified_date "
             + "FROM product "
-            + "WHERE product_id =:productId";
+            + "WHERE product_id = :productId AND status = :status";
 
     Map<String, Object> map = new HashMap<>();
     map.put("productId", productId);
+    map.put("status", ProductStatus.ACTIVE.name());
     List<Product> productList = namedParameterJdbcTemplate.query(sql, map, new ProductRowMapper());
 
     if (!productList.isEmpty()) {
@@ -104,7 +106,7 @@ public class ProductDaoImpl implements ProductDao {
         "UPDATE product SET product_name = :productName, category = :category,"
             + " image_url = :imageUrl, price = :price, stock = :stock, "
             + "description = :description, last_modified_date = :lastModifiedDate "
-            + "WHERE product_id = :productId";
+            + "WHERE product_id = :productId AND status = :status";
 
     Map<String, Object> map = new HashMap<>();
     map.put("productId", productId);
@@ -116,6 +118,7 @@ public class ProductDaoImpl implements ProductDao {
     map.put("stock", productRequest.getStock());
     map.put("description", productRequest.getDescription());
     map.put("lastModifiedDate", new Date());
+    map.put("status", ProductStatus.ACTIVE.name());
 
     namedParameterJdbcTemplate.update(sql, map);
   }
@@ -124,12 +127,13 @@ public class ProductDaoImpl implements ProductDao {
   public void updateStock(Integer productId, Integer stock) {
     String sql =
         "UPDATE product SET stock = :stock, last_modified_date = :lastModifiedDate "
-            + "WHERE product_id = :productId ";
+            + "WHERE product_id = :productId AND status = :status";
 
     Map<String, Object> map = new HashMap<>();
     map.put("productId", productId);
     map.put("stock", stock);
     map.put("lastModifiedDate", new Date());
+    map.put("status", ProductStatus.ACTIVE.name());
 
     namedParameterJdbcTemplate.update(sql, map);
   }
@@ -138,22 +142,27 @@ public class ProductDaoImpl implements ProductDao {
   public boolean decreaseStock(Integer productId, Integer quantity) {
     String sql =
         "UPDATE product SET stock = stock - :quantity, last_modified_date = :lastModifiedDate "
-            + "WHERE product_id = :productId AND stock >= :quantity";
+            + "WHERE product_id = :productId AND stock >= :quantity AND status = :status";
 
     Map<String, Object> map = new HashMap<>();
     map.put("productId", productId);
     map.put("quantity", quantity);
     map.put("lastModifiedDate", new Date());
+    map.put("status", ProductStatus.ACTIVE.name());
 
     return namedParameterJdbcTemplate.update(sql, map) == 1;
   }
 
   @Override
   public void deleteProductById(Integer productId) {
-    String sql = "DELETE FROM product WHERE product_id = :productId";
+    String sql =
+        "UPDATE product SET status = :status, last_modified_date = :lastModifiedDate "
+            + "WHERE product_id = :productId";
 
     Map<String, Object> map = new HashMap<>();
     map.put("productId", productId);
+    map.put("status", ProductStatus.INACTIVE.name());
+    map.put("lastModifiedDate", new Date());
 
     namedParameterJdbcTemplate.update(sql, map);
   }
@@ -168,6 +177,8 @@ public class ProductDaoImpl implements ProductDao {
       sql = sql + " AND product_name LIKE :search";
       map.put("search", "%" + productQueryParams.getSearch() + "%");
     }
+    sql = sql + " AND status = :status";
+    map.put("status", ProductStatus.ACTIVE.name());
     return sql;
   }
 }

@@ -1,6 +1,7 @@
 package com.jason.springbootmall.model;
 
 import com.jason.springbootmall.constant.ProductCategory;
+import com.jason.springbootmall.constant.ProductStatus;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -13,6 +14,7 @@ public class Product implements Serializable {
   private Integer price;
   private Integer stock;
   private String description;
+  private ProductStatus status;
   private Date createdDate;
   private Date lastModifiedDate;
 
@@ -70,6 +72,14 @@ public class Product implements Serializable {
 
   public void setDescription(String description) {
     this.description = description;
+  }
+
+  public ProductStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(String status) {
+    this.status = ProductStatus.valueOf(status);
   }
 
   public Date getCreatedDate() {

@@ -8,10 +8,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jason.springbootmall.constant.ProductCategory;
 import com.jason.springbootmall.dto.ProductRequest;
+import com.jason.springbootmall.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
@@ -21,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @AutoConfigureMockMvc
 public class ProductControllerTest {
+
+  private static final String AUTHORIZATION = "Bearer " + JwtUtil.generateToken("user1@gmail.com");
 
   @Autowired private MockMvc mockMvc;
 
@@ -41,6 +45,7 @@ public class ProductControllerTest {
         .andExpect(jsonPath("$.price", notNullValue()))
         .andExpect(jsonPath("$.stock", notNullValue()))
         .andExpect(jsonPath("$.description", notNullValue()))
+        .andExpect(jsonPath("$.status", equalTo("ACTIVE")))
         .andExpect(jsonPath("$.createdDate", notNullValue()))
         .andExpect(jsonPath("$.lastModifiedDate", notNullValue()));
   }
@@ -67,6 +72,7 @@ public class ProductControllerTest {
 
     RequestBuilder requestBuilder =
         MockMvcRequestBuilders.post("/products")
+            .header(HttpHeaders.AUTHORIZATION, AUTHORIZATION)
             .contentType(MediaType.APPLICATION_JSON)
             .content(json);
 
@@ -79,6 +85,7 @@ public class ProductControllerTest {
         .andExpect(jsonPath("$.price", equalTo(100)))
         .andExpect(jsonPath("$.stock", equalTo(2)))
         .andExpect(jsonPath("$.description", nullValue()))
+        .andExpect(jsonPath("$.status", equalTo("ACTIVE")))
         .andExpect(jsonPath("$.createdDate", notNullValue()))
         .andExpect(jsonPath("$.lastModifiedDate", notNullValue()));
   }
@@ -93,6 +100,7 @@ public class ProductControllerTest {
 
     RequestBuilder requestBuilder =
         MockMvcRequestBuilders.post("/products")
+            .header(HttpHeaders.AUTHORIZATION, AUTHORIZATION)
             .contentType(MediaType.APPLICATION_JSON)
             .content(json);
 
@@ -114,6 +122,7 @@ public class ProductControllerTest {
 
     RequestBuilder requestBuilder =
         MockMvcRequestBuilders.put("/products/{productId}", 3)
+            .header(HttpHeaders.AUTHORIZATION, AUTHORIZATION)
             .contentType(MediaType.APPLICATION_JSON)
             .content(json);
 
@@ -126,6 +135,7 @@ public class ProductControllerTest {
         .andExpect(jsonPath("$.price", equalTo(100)))
         .andExpect(jsonPath("$.stock", equalTo(2)))
         .andExpect(jsonPath("$.description", nullValue()))
+        .andExpect(jsonPath("$.status", equalTo("ACTIVE")))
         .andExpect(jsonPath("$.createdDate", notNullValue()))
         .andExpect(jsonPath("$.lastModifiedDate", notNullValue()));
   }
@@ -140,6 +150,7 @@ public class ProductControllerTest {
 
     RequestBuilder requestBuilder =
         MockMvcRequestBuilders.put("/products/{productId}", 3)
+            .header(HttpHeaders.AUTHORIZATION, AUTHORIZATION)
             .contentType(MediaType.APPLICATION_JSON)
             .content(json);
 
@@ -160,6 +171,7 @@ public class ProductControllerTest {
 
     RequestBuilder requestBuilder =
         MockMvcRequestBuilders.put("/products/{productId}", 20000)
+            .header(HttpHeaders.AUTHORIZATION, AUTHORIZATION)
             .contentType(MediaType.APPLICATION_JSON)
             .content(json);
 
@@ -170,15 +182,24 @@ public class ProductControllerTest {
   @Transactional
   @Test
   public void deleteProduct_success() throws Exception {
-    RequestBuilder requestBuilder = MockMvcRequestBuilders.delete("/products/{productId}", 5);
+    RequestBuilder requestBuilder =
+        MockMvcRequestBuilders.delete("/products/{productId}", 7)
+            .header(HttpHeaders.AUTHORIZATION, AUTHORIZATION);
 
     mockMvc.perform(requestBuilder).andExpect(status().is(204));
+
+    RequestBuilder getDeletedProductRequest =
+        MockMvcRequestBuilders.get("/products/{productId}", 7);
+
+    mockMvc.perform(getDeletedProductRequest).andExpect(status().is(404));
   }
 
   @Transactional
   @Test
   public void deleteProduct_deleteNonExistingProduct() throws Exception {
-    RequestBuilder requestBuilder = MockMvcRequestBuilders.delete("/products/{productId}", 20000);
+    RequestBuilder requestBuilder =
+        MockMvcRequestBuilders.delete("/products/{productId}", 20000)
+            .header(HttpHeaders.AUTHORIZATION, AUTHORIZATION);
 
     mockMvc.perform(requestBuilder).andExpect(status().is(204));
   }
