@@ -12,7 +12,10 @@ import com.jason.springbootmall.model.Product;
 import com.jason.springbootmall.model.User;
 import com.jason.springbootmall.service.OrderService;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,15 +41,24 @@ public class OrderServiceImpl implements OrderService {
   public List<Order> getOrders(OrderQueryParams orderQueryParams) {
     List<Order> orderList = orderDao.getOrders(orderQueryParams);
 
-    for (Order order : orderList) {
-      List<OrderItem> orderItemList = orderDao.getOrderItemsByOrderId(order.getOrderId());
+    if (orderList.isEmpty()) {
+      return orderList;
+    }
 
-      order.setOrderItemList(orderItemList);
+    List<Integer> orderIds = orderList.stream().map(Order::getOrderId).toList();
+    List<OrderItem> orderItemList = orderDao.getOrderItemsByOrderIds(orderIds);
+    Map<Integer, List<OrderItem>> orderItemsByOrderId =
+        orderItemList.stream().collect(Collectors.groupingBy(OrderItem::getOrderId));
+
+    for (Order order : orderList) {
+      order.setOrderItemList(
+          orderItemsByOrderId.getOrDefault(order.getOrderId(), Collections.emptyList()));
     }
 
     return orderList;
   }
 
+  // Roll back stock, order, and order_item changes together if any order step fails.
   @Transactional
   @Override
   public Integer createOrder(Integer userId, CreateOrderRequest createOrderRequest) {

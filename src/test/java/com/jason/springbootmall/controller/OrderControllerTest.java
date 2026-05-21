@@ -214,6 +214,45 @@ public class OrderControllerTest {
   }
 
   @Test
+  public void createOrder_secondItemStockNotEnough_shouldRollbackFirstStockDecrease()
+      throws Exception {
+    CreateOrderRequest createOrderRequest = new CreateOrderRequest();
+    List<BuyItem> buyItemList = new ArrayList<>();
+
+    BuyItem firstItem = new BuyItem();
+    firstItem.setProductId(1);
+    firstItem.setQuantity(1);
+    buyItemList.add(firstItem);
+
+    BuyItem secondItem = new BuyItem();
+    secondItem.setProductId(2);
+    secondItem.setQuantity(10000);
+    buyItemList.add(secondItem);
+
+    createOrderRequest.setBuyItemList(buyItemList);
+
+    String json = objectMapper.writeValueAsString(createOrderRequest);
+
+    RequestBuilder requestBuilder =
+        MockMvcRequestBuilders.post("/users/{userId}/orders", 1)
+            .header(HttpHeaders.AUTHORIZATION, AUTHORIZATION_USER_1)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(json);
+
+    mockMvc
+        .perform(requestBuilder)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status", equalTo(400)))
+        .andExpect(jsonPath("$.code", equalTo("BAD_REQUEST")))
+        .andExpect(jsonPath("$.message", equalTo("Product stock is not enough")));
+
+    mockMvc
+        .perform(MockMvcRequestBuilders.get("/products/{productId}", 1))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.stock", equalTo(10)));
+  }
+
+  @Test
   public void getOrders() throws Exception {
     RequestBuilder requestBuilder =
         MockMvcRequestBuilders.get("/users/{userId}/orders", 1)

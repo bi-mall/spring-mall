@@ -83,14 +83,24 @@ public class OrderDaoImpl implements OrderDao {
 
   @Override
   public List<OrderItem> getOrderItemsByOrderId(Integer orderId) {
+    return getOrderItemsByOrderIds(List.of(orderId));
+  }
+
+  @Override
+  public List<OrderItem> getOrderItemsByOrderIds(List<Integer> orderIds) {
+    if (orderIds == null || orderIds.isEmpty()) {
+      return Collections.emptyList();
+    }
+
     String sql =
         "SELECT oi.order_item_id, oi.order_id, oi.product_id, oi.quantity, oi.amount, p.product_name, p.image_url "
             + "FROM order_item as oi "
             + "LEFT JOIN product as p on oi.product_id = p.product_id "
-            + "WHERE oi.order_id = :orderId";
+            + "WHERE oi.order_id IN (:orderIds) "
+            + "ORDER BY oi.order_id, oi.order_item_id";
 
     Map<String, Object> map = new HashMap<>();
-    map.put("orderId", orderId);
+    map.put("orderIds", orderIds);
 
     return namedParameterJdbcTemplate.query(sql, map, new OrderItemRowMapper());
   }

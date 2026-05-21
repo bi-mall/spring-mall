@@ -5,6 +5,7 @@ import com.jason.springbootmall.constant.ProductSortField;
 import com.jason.springbootmall.constant.SortDirection;
 import com.jason.springbootmall.dto.ProductQueryParams;
 import com.jason.springbootmall.dto.ProductRequest;
+import com.jason.springbootmall.dto.ProductResponse;
 import com.jason.springbootmall.model.Product;
 import com.jason.springbootmall.service.ProductService;
 import com.jason.springbootmall.util.Page;
@@ -25,7 +26,7 @@ public class ProductController {
   @Autowired private ProductService productService;
 
   @GetMapping("/products")
-  public ResponseEntity<Page<Product>> getProducts(
+  public ResponseEntity<Page<ProductResponse>> getProducts(
       // Filtering
       @RequestParam(required = false) ProductCategory category,
       @RequestParam(required = false) String search,
@@ -47,40 +48,43 @@ public class ProductController {
     productQueryParams.setOffset(offset);
     // 取得 product list
     List<Product> productList = productService.getProducts(productQueryParams);
+    List<ProductResponse> productResponseList =
+        productList.stream().map(ProductResponse::from).toList();
     // 取得總數
     Integer total = productService.countProduct(productQueryParams);
     // 分頁
-    Page<Product> page = new Page<>();
+    Page<ProductResponse> page = new Page<>();
     page.setLimit(limit);
     page.setOffset(offset);
     page.setTotal(total);
-    page.setResults(productList);
+    page.setResults(productResponseList);
 
     return ResponseEntity.status(HttpStatus.OK).body(page);
   }
 
   @GetMapping("/products/{productId}")
-  public ResponseEntity<Product> getProduct(@PathVariable Integer productId) {
+  public ResponseEntity<ProductResponse> getProduct(@PathVariable Integer productId) {
     Product product = productService.getProductById(productId);
 
     if (product != null) {
-      return ResponseEntity.status(HttpStatus.OK).body(product);
+      return ResponseEntity.status(HttpStatus.OK).body(ProductResponse.from(product));
     } else {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
   }
 
   @PostMapping("/products")
-  public ResponseEntity<Product> createProduct(@RequestBody @Valid ProductRequest productRequest) {
+  public ResponseEntity<ProductResponse> createProduct(
+      @RequestBody @Valid ProductRequest productRequest) {
     Integer productId = productService.createProduct(productRequest);
 
     Product product = productService.getProductById(productId);
 
-    return ResponseEntity.status(HttpStatus.CREATED).body(product);
+    return ResponseEntity.status(HttpStatus.CREATED).body(ProductResponse.from(product));
   }
 
   @PutMapping("/products/{productId}")
-  public ResponseEntity<Product> updateProduct(
+  public ResponseEntity<ProductResponse> updateProduct(
       @PathVariable Integer productId, @RequestBody @Valid ProductRequest productRequest) {
     // 檢查product 是否存在
     Product product = productService.getProductById(productId);
@@ -92,7 +96,7 @@ public class ProductController {
 
     Product updatedProduct = productService.getProductById(productId);
 
-    return ResponseEntity.status(HttpStatus.OK).body(updatedProduct);
+    return ResponseEntity.status(HttpStatus.OK).body(ProductResponse.from(updatedProduct));
   }
 
   @DeleteMapping("/products/{productId}")
