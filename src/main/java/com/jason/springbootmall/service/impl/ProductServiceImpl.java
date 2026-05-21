@@ -45,7 +45,7 @@ public class ProductServiceImpl implements ProductService {
 
   @Override
   @CacheEvict(value = "product", key = "#productId")
-  public void deleteProductById(Integer productId) {
-    productDao.deleteProductById(productId);
+  public boolean deleteProductById(Integer productId) {
+    return productDao.deleteProductById(productId);
   }
 }

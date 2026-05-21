@@ -201,7 +201,7 @@ public class ProductControllerTest {
         MockMvcRequestBuilders.delete("/products/{productId}", 20000)
             .header(HttpHeaders.AUTHORIZATION, AUTHORIZATION);
 
-    mockMvc.perform(requestBuilder).andExpect(status().is(204));
+    mockMvc.perform(requestBuilder).andExpect(status().is(404));
   }
 
   // 查詢商品列表

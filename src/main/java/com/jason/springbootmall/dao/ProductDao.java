@@ -21,5 +21,5 @@ public interface ProductDao {
 
   boolean decreaseStock(Integer productId, Integer quantity);
 
-  void deleteProductById(Integer productId);
+  boolean deleteProductById(Integer productId);
 }

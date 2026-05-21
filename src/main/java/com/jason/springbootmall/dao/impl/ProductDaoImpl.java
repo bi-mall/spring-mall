@@ -154,17 +154,18 @@ public class ProductDaoImpl implements ProductDao {
   }
 
   @Override
-  public void deleteProductById(Integer productId) {
+  public boolean deleteProductById(Integer productId) {
     String sql =
         "UPDATE product SET status = :status, last_modified_date = :lastModifiedDate "
-            + "WHERE product_id = :productId";
+            + "WHERE product_id = :productId AND status = :activeStatus";
 
     Map<String, Object> map = new HashMap<>();
     map.put("productId", productId);
     map.put("status", ProductStatus.INACTIVE.name());
+    map.put("activeStatus", ProductStatus.ACTIVE.name());
     map.put("lastModifiedDate", new Date());
 
-    namedParameterJdbcTemplate.update(sql, map);
+    return namedParameterJdbcTemplate.update(sql, map) == 1;
   }
 
   private String addFilteringSql(
