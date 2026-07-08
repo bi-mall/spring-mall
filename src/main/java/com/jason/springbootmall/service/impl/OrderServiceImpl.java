@@ -6,6 +6,7 @@ import com.jason.springbootmall.dao.UserDao;
 import com.jason.springbootmall.dto.BuyItem;
 import com.jason.springbootmall.dto.CreateOrderRequest;
 import com.jason.springbootmall.dto.OrderQueryParams;
+import com.jason.springbootmall.dto.OrderResponse;
 import com.jason.springbootmall.model.Order;
 import com.jason.springbootmall.model.OrderItem;
 import com.jason.springbootmall.model.Product;
@@ -38,11 +39,11 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
-  public List<Order> getOrders(OrderQueryParams orderQueryParams) {
+  public List<OrderResponse> getOrders(OrderQueryParams orderQueryParams) {
     List<Order> orderList = orderDao.getOrders(orderQueryParams);
 
     if (orderList.isEmpty()) {
-      return orderList;
+      return Collections.emptyList();
     }
 
     List<Integer> orderIds = orderList.stream().map(Order::getOrderId).toList();
@@ -55,7 +56,7 @@ public class OrderServiceImpl implements OrderService {
           orderItemsByOrderId.getOrDefault(order.getOrderId(), Collections.emptyList()));
     }
 
-    return orderList;
+    return orderList.stream().map(OrderResponse::from).toList();
   }
 
   // Roll back stock, order, and order_item changes together if any order step fails.
@@ -86,7 +87,7 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
-  public Order getOrderById(Integer orderId) {
+  public OrderResponse getOrderById(Integer orderId) {
     Order order = orderDao.getOrderById(orderId);
 
     if (order == null) {
@@ -97,7 +98,7 @@ public class OrderServiceImpl implements OrderService {
 
     order.setOrderItemList(orderItemList);
 
-    return order;
+    return OrderResponse.from(order);
   }
 
   private void validateUserExists(Integer userId) {
