@@ -2,7 +2,7 @@ package com.jason.springbootmall.controller;
 
 import com.jason.springbootmall.dto.CreateOrderRequest;
 import com.jason.springbootmall.dto.OrderQueryParams;
-import com.jason.springbootmall.model.Order;
+import com.jason.springbootmall.dto.OrderResponse;
 import com.jason.springbootmall.model.User;
 import com.jason.springbootmall.service.OrderService;
 import com.jason.springbootmall.service.UserService;
@@ -30,7 +30,7 @@ public class OrderController {
   @Autowired private UserService userService;
 
   @GetMapping("/users/{userId}/orders")
-  public ResponseEntity<Page<Order>> getOrders(
+  public ResponseEntity<Page<OrderResponse>> getOrders(
       @PathVariable Integer userId,
       @RequestParam(defaultValue = "10") @Max(1000) @Min(1) Integer limit,
       @RequestParam(defaultValue = "0") @Min(0) Integer offset,
@@ -42,10 +42,10 @@ public class OrderController {
     orderQueryParams.setOffset(offset);
     orderQueryParams.setLimit(limit);
 
-    List<Order> orderList = orderService.getOrders(orderQueryParams);
+    List<OrderResponse> orderList = orderService.getOrders(orderQueryParams);
     Integer count = orderService.countOrder(orderQueryParams);
 
-    Page<Order> page = new Page<>();
+    Page<OrderResponse> page = new Page<>();
     page.setLimit(limit);
     page.setOffset(offset);
     page.setTotal(count);
@@ -55,7 +55,7 @@ public class OrderController {
   }
 
   @PostMapping("/users/{userId}/orders")
-  public ResponseEntity<Order> createOrder(
+  public ResponseEntity<OrderResponse> createOrder(
       @PathVariable Integer userId,
       @RequestBody @Valid CreateOrderRequest createOrderRequest,
       Authentication authentication) {
@@ -63,7 +63,7 @@ public class OrderController {
 
     Integer orderId = orderService.createOrder(userId, createOrderRequest);
 
-    Order order = orderService.getOrderById(orderId);
+    OrderResponse order = orderService.getOrderById(orderId);
 
     return ResponseEntity.status(HttpStatus.CREATED).body(order);
   }
